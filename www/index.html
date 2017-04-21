@@ -66,14 +66,14 @@
 			// in general, we set up virtual Box2D shapes
 			// and then Box2D calculates forces, positons, rotation, collisions
 			// we can see these if we set the debug to true
-			// we then map our own ZIM and CreateJS assets onto the Box2D ones
+			// we then map our own ZIM and CreateJS img onto the Box2D ones
 			// you are not supposed to directly influence positions
 			// but rather use forces and let Box2D move things
 
 
 
-			// 1. load bowl assets with Frame.loadAssets
-			var assetPath = "assets/";
+			// 1. load bowl img with Frame.loadimg
+			var assetPath = "img/";
 			frame.loadAssets(["bgm.mp3", "qik.mp3", "circle_w.png", "circle_g.png", "steel_ball.png", "back3.jpg", "ball_big.png", "pad_left.png", "pad_right.png"], assetPath);
 
 			frame.on("complete", frameReady, null, true);
@@ -385,11 +385,21 @@
 		}); // end of ready
 	</script>
 
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimal-ui" />
+	<!--<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimal-ui" />-->
 
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+ 
 </head>
 
 <body>
+	    <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript">
+            app.initialize();
+        </script>
 </body>
 
 </html>
