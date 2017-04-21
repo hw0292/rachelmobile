@@ -1,0 +1,395 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Pinball</title>
+
+	<!-- for CreateJS and ZIMjs http://zimjs.com - free to modify - Dan Zen 2016 -->
+	<!-- see http://zimjs.com/templates for more templates and meta tags -->
+
+	<script src="js/createjs-2015.11.26.min.js"></script>
+	<script>
+		var zon = true; // true for comments from zim code
+	</script>
+	<script src="js/zim_4.5.0.js"></script>
+	<!--<script src="http://zimjs.com/code/bits/footer2.js"></script> you will not need this -->
+
+	<!-- physics libraries -->
+	<script src="js/Box2dWeb-2.1.a.3.min.js"></script>
+	<script src="js/physics_0.1.0.js"></script>
+	<script src="js/physicsAddOn.js"></script>
+	<script src="js/physicsPinBall.js"></script>
+
+	<!-- helper code for box2D -->
+
+	<style>
+		body {
+			background-color: #eee;
+		}
+	</style>
+
+	<script>
+		// SCALING OPTIONS
+		// scaling can have values as follows with full being the default
+		// "fit"		sets canvas and stage to dimensions and scales to fit inside window size
+		// "outside"	sets canvas and stage to dimensions and scales to fit outside window size
+		// "full"		sets stage to window size with no scaling
+		// "tagID"		add canvas to HTML tag of ID - set to dimensions if provided - no scaling
+
+		var scaling = "fit"; // this will resize to fit inside the screen dimensions
+		var width = 450;
+		var height = 600;
+		var color = "#333";
+
+		var frame = new zim.Frame(scaling, width, height, color);
+		frame.on("ready", function () {
+
+			zog("ready from ZIM Frame");
+
+			var stage = frame.stage;
+			var stageW = frame.width;
+			var stageH = frame.height;
+
+			// ZIM BITS - Physics with Box2D (2016)
+
+			// ZIM can be used with 2D physics engines such as Box2D
+			// Box2D is rediculously verbose - but that gives it flexibility
+			// the ZIM Physics module offers some welcome abstraction
+			// (this code would be about 10 times as many lines)
+			// you can still use traditional Box2D as well
+			// currently there are a couple ZIM Bits on Physics
+			// this one shows basic shapes, mapping and mouse interaction
+			// the second one shows forces, buoyancy, and sensors
+
+			// OVERVIEW
+			// in general, we set up virtual Box2D shapes
+			// and then Box2D calculates forces, positons, rotation, collisions
+			// we can see these if we set the debug to true
+			// we then map our own ZIM and CreateJS assets onto the Box2D ones
+			// you are not supposed to directly influence positions
+			// but rather use forces and let Box2D move things
+
+
+
+			// 1. load bowl assets with Frame.loadAssets
+			var assetPath = "assets/";
+			frame.loadAssets(["bgm.mp3", "qik.mp3", "circle_w.png", "circle_g.png", "steel_ball.png", "back3.jpg", "ball_big.png", "pad_left.png", "pad_right.png"], assetPath);
+
+			frame.on("complete", frameReady, null, true);
+
+			function frameReady() {
+
+				// make borders for the world
+				// this stops stuff from going off the screen
+				// but also could stop things from falling in through the top of the screen
+				var borders = { x: 0, y: 0, width: stageW, height: stageH };
+
+				// make a new Physics object passing in the ZIM frame and borders
+				// it needs a frame so it can get scale to match the debug canvas
+				// var physics = new zim.Physics(frame, borders);
+				var physics = new zim.Physics(frame, borders, 3);
+
+				physics.remove(physics.borderBottom);
+
+				// rachel's addon class for zim and gravity
+				var physicsAddOn = new zim.PhysicsAddOn(frame, borders, physics);
+				var physicsPinBall = new zim.PhysicsPinBall(frame, borders, physics);
+
+				// MOUSE
+				// set optional mouse dragging
+				// optionally pass in a list of bodies to receive mouse movement
+				// otherwise defaults to all moveable bodies
+				// physics.drag([boxBody, triBody]); // would not drag circleBody
+				physics.drag();
+				// physicsAddOn.physics.drag();
+
+				// set optional debug canvas showing Box2D shapes
+				// DEBUG
+				// optionally see the BOX 2D debug canvas - uncomment below
+				// physics.debug();
+				frame.on("resize", function () {
+					physics.updateDebug();
+				});
+
+
+				//background 
+				var back = frame.asset("back3.jpg");
+				back.scale(1.4);
+				back.alpha = 0.7;
+				back.centerReg(stage);
+				stage.addChild(back);
+
+				//create the circle
+				var circle_w = frame.asset("circle_w.png");
+				circle_w.scale(.4);
+
+				var circle_g = frame.asset("circle_g.png");
+				circle_g.scale(.5);
+
+				var ball_big = frame.asset("ball_big.png");
+				ball_big.scale(.4);
+
+				//steel_ball 
+				var steel_ball = frame.asset("steel_ball.png");
+				steel_ball.scale(.2);
+
+				//pad
+				var pad_left = frame.asset("pad_left.png");
+				pad_left.scale(1.1);
+
+				var pad_right = frame.asset("pad_right.png");
+				pad_right.scale(1.1);
+
+				// top outlines
+				physicsAddOn.addRoad({ x: 100, y: 80, width: 150, rotation: -25 });
+				physicsAddOn.addRoad({ x: 350, y: 80, width: 150, rotation: 25 });
+				physicsAddOn.addRoad({ x: 15, y: 145, width: 80, rotation: -60 });
+				physicsAddOn.addRoad({ x: 435, y: 145, width: 80, rotation: 60 });
+
+				//top center
+				physicsAddOn.addRoad({ x: 225, y: 48, width: 116, rotation: 0 });
+				physicsAddOn.addRoad({ x: 155, y: 110, width: 60, rotation: -25 });
+
+				physicsAddOn.addPendant({ x: 225, y: 120, radius: 10, restitution: 0.9, centerX: stageW - 95, centerY: 140 });
+
+				//right inner
+				physicsAddOn.addRoad({ x: 369, y: 393, width: 120, rotation: 90 });
+			
+				physicsAddOn.addRoad({ x: 395, y: 241, width: 90, rotation: -73 });
+				physicsAddOn.addRoad({ x: 320, y: 180, width: 60, rotation: 25 });
+
+				// outlines sides right spring area
+				physicsAddOn.addRoad({ x: 409, y: 400, width: 405, rotation: 90 });
+
+				//inner left road
+				physicsAddOn.addRoad({ x: 35, y: 200, width: 60, rotation: 90 });
+				physicsAddOn.addRoad({ x: 75, y: 200, width: 60, rotation: 90 });
+				physicsAddOn.addRoad({ x: 115, y: 200, width: 60, rotation: 90 });
+				physicsAddOn.addRoad({ x: 155, y: 200, width: 60, rotation: 90 });
+				physicsAddOn.addRoad({ x: 28, y: 405, width: 20, rotation: 90 });
+
+				physicsAddOn.addRoad({ x: 15, y: 345, width: 70, rotation: 45 });
+				physicsAddOn.addRoad({ x: 78, y: 368, width: 70, rotation: 90});
+
+				// inner bottoms
+				physicsAddOn.addRoad({ x: 88, y: 456, width: 150, rotation: 35 });
+				physicsAddOn.addRoad({ x: 335, y: 475, width: 82, rotation: 145 });
+
+				// outlines bottoms
+				physicsAddOn.addRoad({ x: 87, y: 510, width: 230, rotation: 35 });
+				physicsAddOn.addRoad({ x: 340, y: 525, width: 170, rotation: 145 });
+				physicsAddOn.addRoad({ x: 180, y: 590, width: 35, rotation: 90 });
+				physicsAddOn.addRoad({ x: 270, y: 590, width: 35, rotation: 90 });
+
+				// center triangle
+				physicsAddOn.addRoad({ x: 133, y: 435, width: 38, rotation: 35 });
+				physicsAddOn.addRoad({ x: 118, y: 385, width: 80, rotation: 90 });
+				physicsAddOn.addRoad({ x: 133, y: 395, width: 100, rotation: 73 });
+
+				physicsAddOn.addRoad({ x: 315, y: 435, width: 38, rotation: -35 });
+				physicsAddOn.addRoad({ x: 330, y: 385, width: 80, rotation: 90 });
+				physicsAddOn.addRoad({ x: 315, y: 395, width: 100, rotation: -73 });
+
+				//circle top
+				physicsAddOn.addBall({ x: 290, y: 110, radius: 8, dynamic: false, pic: circle_g });
+				physicsAddOn.addBall({ x: 330, y: 130, radius: 8, dynamic: false, pic: circle_g });
+				physicsAddOn.addBall({ x: 370, y: 150, radius: 8, dynamic: false, pic: circle_g });
+				//circle center
+				physicsAddOn.addBall({ x: stageW / 2, y: stageW / 2 + 20, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: stageW / 2, y: stageW / 2 + 150, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: stageW / 2 + 70, y: stageW / 2 + 85, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: stageW / 2 - 70, y: stageW / 2 + 85, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: stageW / 2 - 45, y: stageW / 2 + 45, radius: 7, dynamic: false, pic: circle_g });
+				physicsAddOn.addBall({ x: stageW / 2 + 45, y: stageW / 2 + 45, radius: 7, dynamic: false, pic: circle_g });
+				physicsAddOn.addBall({ x: stageW / 2 + 45, y: stageW / 2 + 125, radius: 7, dynamic: false, pic: circle_g });
+				physicsAddOn.addBall({ x: stageW / 2 - 45, y: stageW / 2 + 125, radius: 7, dynamic: false, pic: circle_g })
+
+				// physicsAddOn.addBall({ x: 20, y: 270, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: 55, y: 270, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: 95, y: 270, radius: 7, dynamic: false, pic: circle_w });
+				physicsAddOn.addBall({ x: 135, y: 270, radius: 7, dynamic: false, pic: circle_w });
+
+				physicsAddOn.addBall({ x: stageW / 2, y: stageW / 2 + 85, radius: 20, dynamic: false, pic: ball_big });
+
+
+				// Ball and paddle
+			
+				physicsPinBall.addBall({ x: width - 30, y: height - 30, radius: 8, pic: steel_ball });
+				
+				var paddleLeft = physicsPinBall.addFlipper({ position: "left", x: 186, y: 505, pic: pad_left });
+				var paddleRight = physicsPinBall.addFlipper({ position: "right", x: 264, y: 505, pic: pad_right });
+
+				// top buttons
+				var labelTop = new zim.Label({
+					text: "Shot Ball",
+					size: 14,
+					color: "#fff",
+					fontOptions: "bold"
+				});
+				var buttonTop = new zim.Button({
+					width: 80, height: 60,
+					label: labelTop,
+					color: frame.green,
+					gloss: .1,
+					corner: 30,
+					borderColor: "#fff", borderWidth: 3
+				});
+				buttonTop.center(stage);
+				buttonTop.x -= 160;
+				buttonTop.y -= 260;
+
+				// ----------  MY SCORE PANEL
+
+				var scorePanel = new zim.Container();
+				stage.addChild(scorePanel);
+				scorePanel.setBounds(0, 0, 170, 100);
+
+				var scoreTitle = new zim.Label({ text: "My Score", size: "10", color: "#ffff99", align: "center" });
+				scoreTitle.center(scorePanel);
+				scoreTitle.x += 310;
+				scoreTitle.y -= 30;
+
+				var scoreText = new zim.Label({ text: "000", size: "30", color: "#ffff99", align: "center" });
+				scoreText.center(scorePanel);
+				scoreText.x += 310;
+				scoreText.y -= 0;
+
+				// scoreText.text = myScore;
+
+				// botttom buttons
+				var labelLeft = new zim.Label({
+					text: "z | <",
+					size: 20,
+					color: "#fff",
+					fontOptions: "bold"
+				});
+				var buttonLeft = new zim.Button({
+					width: 60, height: 60,
+					label: labelLeft,
+					color: frame.blue,
+					gloss: .1,
+					corner: 30,
+					borderColor: "#fff", borderWidth: 3
+				});
+				buttonLeft.center(stage);
+				buttonLeft.x -= 140;
+				buttonLeft.y += 260;
+
+				var labelRight = new zim.Label({
+					text: "? | >",
+					size: 20,
+					color: "#fff",
+					fontOptions: "bold"
+				});
+				var buttonRight = new zim.Button({
+					width: 60, height: 60,
+					label: labelRight,
+					color: frame.blue,
+					gloss: .1,
+					corner: 30,
+					borderColor: "#fff", borderWidth: 3
+				});
+				buttonRight.center(stage);
+				buttonRight.x += 140;
+				buttonRight.y += 260;
+
+
+				// sound event 
+				var soundPlay = frame.asset("bgm.mp3").play({ volume: 0.2, loop: 1 });
+				var soundTick = frame.asset("qik.mp3").play({ volume: 1, loop: 1 });
+				soundTick.paused = true;
+				// when hitting
+				var contactListener = new Box2D.Dynamics.b2ContactListener;
+				contactListener.BeginContact = function (contact) {
+					if (contact.GetFixtureA().GetBody().width == contact.GetFixtureA().GetBody().height
+						&& contact.GetFixtureB().GetBody().width == contact.GetFixtureB().GetBody().height
+					) {
+						soundTick.play();
+
+						scoreText.text = parseInt(scoreText.text) + 10;
+
+						// alert('qik');
+						// zog(contact.GetFixtureA().GetBody());
+						// zog(contact.GetFixtureB().GetBody());
+					}
+					// zog(contact.GetFixtureB().GetBody());
+					// zog(contact.GetFixtureB().GetBody().height);
+				}
+				physics.world.SetContactListener(contactListener);
+
+
+				// mouse touch event
+
+				document.onkeydown = function (e) {
+					switch (e.keyCode) {
+						case 37: // left
+						case 90: // z
+							paddleLeft.SetMotorSpeed(30);
+
+							// alert('left');
+							break;
+						case 39: // right
+						case 47: // m
+						case 191: // "/"
+							paddleRight.SetMotorSpeed(-30);
+
+							// alert('right');
+							break;
+					}
+				};
+
+				document.onkeyup = function (e) {
+					switch (e.keyCode) {
+						case 37:
+						case 90:
+							paddleLeft.SetMotorSpeed(-10);
+							// alert('left');
+							break;
+						case 39:
+						case 47:
+						case 191:
+							paddleRight.SetMotorSpeed(10);
+							// alert('right');
+							break;
+						case 32: // click space to make ball
+							physicsPinBall.addBall({ x: width - 30, y: height - 30, radius: 8, pic: steel_ball });
+							break;
+					}
+				};
+
+
+				buttonTop.on("mousedown", function (e) {
+					physicsPinBall.addBall({ x: width - 30, y: height - 30, radius: 8, pic: steel_ball });
+				});
+
+
+				buttonLeft.on("mousedown", function (e) {
+					paddleLeft.SetMotorSpeed(30);
+
+					window.setTimeout(function () {
+						paddleLeft.SetMotorSpeed(-10);
+					}, 100);
+				});
+
+				buttonRight.on("mousedown", function (e) {
+					paddleRight.SetMotorSpeed(-30);
+
+					window.setTimeout(function () {
+						paddleRight.SetMotorSpeed(10);
+					}, 100);
+				});
+
+			} //complete
+
+		}); // end of ready
+	</script>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimal-ui" />
+
+</head>
+
+<body>
+</body>
+
+</html>
